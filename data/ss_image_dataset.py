@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
 import numpy as np
+import platform
 
 from enum import Flag, auto
 
@@ -60,7 +61,18 @@ class SSImageDataset(Dataset):
                  filetype='png', exclude_noisy_files=False):
         if isinstance(root_dirs, str):
             root_dirs = [root_dirs]
-        root_dirs = [rd.removesuffix('/') for rd in root_dirs]
+            
+        version_tokens = platform.python_version().split('.')
+        suffix = '/'
+        # only starting in python 3.9 is 'removesuffix()' available
+        if len(version_tokens) >= 2:
+            major_version = int(version_tokens[0])
+            minor_version = int(version_tokens[1])
+            if major_version < 3 or minor_version < 9:
+                root_dirs = [rd[:-len(suffix)] if rd.endswith(suffix) else rd for rd in root_dirs] 
+        else:
+            root_dirs = [rd.removesuffix('/') for rd in root_dirs]
+            
         noisy_flag = '__noisy__'
         if isinstance(image_sets, str):
             image_sets = [image_sets]
