@@ -49,7 +49,7 @@ class BaseOptions():
                                                                                '[resnet_9blocks | resnet_6blocks '
                                                                                '| unet_256 | unet_128]')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if netD==n_layers')
-        parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch '
+        parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch '
                                                                          'normalization [instance | batch | none]')
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization '
                                                                             '[normal | xavier | kaiming | orthogonal]')
@@ -104,6 +104,16 @@ class BaseOptions():
                             help='if specified, clamp input images to console palette')
         parser.add_argument('--tf_negate', action='store_true',
                             help='if specified, negate image palette')
+
+        parser.add_argument('--tf_size_augment', type=str, default='none',
+                            help='[none | '
+                                 'double_and_crop | '
+                                 'double_and_reduce_on_save'
+                                 ']')
+
+        parser.add_argument('--tf_enlarge', action='store_true',
+                            help='if specified, enlarge image x2 using nearest neighbor '
+                                 '(saves to disk back to normal size - TODO)')
         self.initialized = True
         return parser
 

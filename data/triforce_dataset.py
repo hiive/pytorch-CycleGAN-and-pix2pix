@@ -23,7 +23,7 @@ class TriforceDataset(BaseDataset):
         # self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')  # create a path '/path/to/data/trainA'
         # self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')  # create a path '/path/to/data/trainB'
 
-        split = opt.tf_split
+        self.tf_split = opt.tf_split
         self.console_a = opt.tf_console_a
         self.console_b = opt.tf_console_b
 
@@ -33,7 +33,7 @@ class TriforceDataset(BaseDataset):
                                                                    'superfamicomdotorg',
                                                                    ],
                                                        train=opt.isTrain,
-                                                       train_pct=split,
+                                                       train_pct=self.tf_split,
                                                        consoles=[console],
                                                        augments_allowed=AugmentFlag.AllowFlipBoth,
                                                        zoom_levels=ZoomLevelFlag.CleanSet,
@@ -111,6 +111,10 @@ def get_triforce_transform(opt, console, params=None, grayscale=False, method=Im
     if opt.tf_negate:
         extra_transforms.append(TriforceNegateColorsTransform())
 
+    if opt.tf_size_augment != 'none':
+        crop = opt.tf_size_augment != 'double_and_reduce_on_save'
+        extra_transforms.append(TriforceNearestNeighborEnlarge2x(seed=int((opt.tf_split + 1) * 100), do_crop=crop))
+
     # ensure image dims are divisible by 256 if necessary
     if 'unet_' in opt.netG:
         extra_transforms.append(TriforcePaddingTransform(output_size=(256, 256)))
@@ -130,6 +134,21 @@ class TriforcePaddingTransform:
         d_h = out_h - img_h
         padding = (d_w // 2, d_h // 2, d_w - (d_w // 2), d_h - (d_h // 2))
         return ImageOps.expand(img, padding)
+
+
+class TriforceNearestNeighborEnlarge2x:
+    def __init__(self, seed=0, do_crop=True, method=Image.NEAREST):
+        self.method = method
+        self.rng = np.random.default_rng(seed)
+        self.do_crop = do_crop
+
+    def __call__(self, img):
+        big_img = ImageOps.scale(img, 2.0, self.method)
+        w, h = img.size
+        ix = int(self.rng.random() * w)
+        iy = int(self.rng.random() * h)
+        # print(f'do_crop {self.do_crop}')
+        return big_img.crop((ix, iy, ix + w, iy + h)) if self.do_crop else big_img
 
 
 class TriforceNegateColorsTransform:

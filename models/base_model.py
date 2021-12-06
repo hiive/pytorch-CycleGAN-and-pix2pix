@@ -128,9 +128,15 @@ class BaseModel(ABC):
     def get_current_visuals(self):
         """Return visualization images. train.py will display these images with visdom, and save the images to a HTML"""
         visual_ret = OrderedDict()
+        from torch.nn import AvgPool2d
+        reducer = AvgPool2d(kernel_size=2, stride=2)
         for name in self.visual_names:
             if isinstance(name, str):
                 vis = getattr(self, name)
+                if self.opt.tf_size_augment == 'double_and_reduce_on_save':
+                    vis = reducer(vis.clone().detach())
+                    print('reducing')
+
                 if self.opt.tf_negate:
                     # negate back to normal
                     vis = 255. - vis.clone().detach()
